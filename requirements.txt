@@ -1,0 +1,11 @@
+Django>=3.2,<4.0  # الإصدار الأساسي من Django
+gunicorn>=20.0.4  # لتشغيل التطبيق في بيئات الإنتاج
+psycopg2>=2.9  # إذا كنت تستخدم PostgreSQL
+mysqlclient>=2.1.1  # إذا كنت تستخدم MySQL (اختياري، حسب قاعدة البيانات)
+python-decouple>=3.8  # لإدارة الإعدادات الحساسة
+whitenoise>=6.4.0  # لخدمة الملفات الثابتة (Static Files)
+django-environ>=0.10  # لإدارة إعدادات البيئة (اختياري)
+django-extensions>=3.2.1  # لإضافة أدوات إضافية (اختياري)
+django-cacheops>=5.4.0  # لاستخدام الكاش (اختياري)
+crispy-bootstrap4>=2022.1
+Pillow>=9.0.0
