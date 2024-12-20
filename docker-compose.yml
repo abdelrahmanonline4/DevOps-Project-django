@@ -3,41 +3,18 @@ services:
   web:
     build:
       context: .
-    container_name: django-web
+    container_name: web
     ports:
       - "8000:8000"
     volumes:
       - .:/app
-      - static_volume:/app/staticfiles  # حفظ الملفات الثابتة في مجلد مشترك
+      - static_volume:/app/staticfiles
     environment:
-      - POSTGRES_USER_FILE=/run/secrets/postgres_user
-      - POSTGRES_PASSWORD_FILE=/run/secrets/postgres_password
-      - POSTGRES_DB_FILE=/run/secrets/postgres_db
-      - DB_HOST=db
-      - DB_PORT=5432
-      - STATIC_ROOT=/app/staticfiles  # إعداد STATIC_ROOT دون تعديل الكود
-    depends_on:
-      - db
-    secrets:
-      - postgres_user
-      - postgres_password
-      - postgres_db
-
-  db:
-    image: postgres:13
-    container_name: postgres-db
-    environment:
-      - POSTGRES_USER_FILE=/run/secrets/postgres_user
-      - POSTGRES_PASSWORD_FILE=/run/secrets/postgres_password
-      - POSTGRES_DB_FILE=/run/secrets/postgres_db
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
-    secrets:
-      - postgres_user
-      - postgres_password
-      - postgres_db
+      - STATIC_ROOT=/app/staticfiles
+    command: >
+      sh -c "python manage.py collectstatic --noinput &&
+             python manage.py migrate &&
+             python manage.py runserver 0.0.0.0:8000"
 
   nginx:
     build:
@@ -48,18 +25,9 @@ services:
     depends_on:
       - web
     volumes:
-      - static_volume:/app/staticfiles  # يستخدم نفس مجلد staticfiles
-      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf  # ملف إعدادات NGINX
+      - static_volume:/app/staticfiles
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf
 
 volumes:
-  postgres_data:
   static_volume:
-
-secrets:
-  postgres_user:
-    file: ./secrets/postgres_user
-  postgres_password:
-    file: ./secrets/postgres_password
-  postgres_db:
-    file: ./secrets/postgres_db
 
