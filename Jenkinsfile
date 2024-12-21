@@ -1,62 +1,57 @@
 pipeline {
     agent any
+
     environment {
-        // Define DockerHub credentials and repository details
-        DOCKERHUB_CREDENTIALS = 'Docker'  // ID of your Docker credentials in Jenkins
         IMAGE_NAME_NGINX = '3booda24/devops-project-django_nginx:latest'
         IMAGE_NAME_DJANGO = '3booda24/devops-project-django_web:latest'
     }
+
     stages {
-        stage('Clone repository') {
+        stage('Clone Repository') {
             steps {
-                // Clones your GitHub repository
-                git 'https://github.com/abdelrahmanonline4/DevOps-Project-django'
+                git url: 'https://github.com/abdelrahmanonline4/DevOps-Project-django', credentialsId: 'id_beyanat_el_etemad'
             }
         }
-        stage('Build Django Docker image') {
+
+        stage('Build Django Docker Image') {
             steps {
                 script {
-                    // Builds Docker image for Django app
-                    docker.build("${IMAGE_NAME_DJANGO}", '.')
+                    def app = docker.build(IMAGE_NAME_DJANGO)
                 }
             }
         }
-        stage('Build Nginx Docker image') {
+
+        stage('Build Nginx Docker Image') {
             steps {
                 script {
-                    // Change directory to 'nginx' and build Docker image for Nginx
                     dir('nginx') {
-                        docker.build("${IMAGE_NAME_NGINX}", '.')
+                        def nginx = docker.build(IMAGE_NAME_NGINX)
                     }
                 }
             }
         }
+
         stage('Push Docker Images') {
             steps {
                 script {
-                    // Logs in to DockerHub and pushes both images
-                    docker.withRegistry('', "${DOCKERHUB_CREDENTIALS}") {
-                        docker.image("${IMAGE_NAME_DJANGO}").push()
-                        docker.image("${IMAGE_NAME_NGINX}").push()
+                    // استخدام اسم المستخدم وكلمة المرور مباشرة
+                    docker.withRegistry('https://registry.hub.docker.com', 'dockerhub-3booda24') {
+                        sh "docker login -u 3booda24 -p bedomm180Ab"
+                        docker.image(IMAGE_NAME_DJANGO).push()
+                        docker.image(IMAGE_NAME_NGINX).push()
                     }
                 }
             }
         }
-        stage('Deploy Kubernetes Configs') {
+
+        stage('Deploy Kubernetes Configurations') {
             steps {
                 script {
-                    // Apply all Kubernetes configurations in the root directory
-                    sh 'kubectl apply -f static-pv-pvc.yaml'
+                    sh 'kubectl apply -f .
                     sh 'kubectl apply -f deploy/'
                 }
             }
         }
     }
-    post {
-        always {
-            // Cleanup after the pipeline execution
-            cleanWs()
-        }
-    }
-}
 
+}
