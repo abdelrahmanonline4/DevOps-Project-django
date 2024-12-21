@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: django
-          image: 3booda24/devops-project-django_web:v3
+          image: gcr.io/$PROJECT_ID/my-app:$SHORT_SHA
           ports:
             - containerPort: 8000
           volumeMounts:

@@ -1,6 +1,3 @@
-options:
-  logging: CLOUD_LOGGING_ONLY
-
 steps:
   - name: 'gcr.io/cloud-builders/docker'
     args: ['build', '-t', 'gcr.io/$PROJECT_ID/my-app:$SHORT_SHA', '.']
@@ -17,7 +14,7 @@ steps:
     args: ['push', 'gcr.io/$PROJECT_ID/nginx:$SHORT_SHA']
 
   - name: 'gcr.io/cloud-builders/kubectl'
-    args: ['apply', '-f', 'deploy/', '-f', 'k8s.yaml']
+    args: ['apply', '-f', '.', '-f', 'deploy/']  # تطبيق جميع الملفات في المجلد الرئيسي ومجلد deploy
     env:
       - 'CLOUDSDK_COMPUTE_ZONE=us-central1-c'
       - 'CLOUDSDK_CONTAINER_CLUSTER=django-devops'

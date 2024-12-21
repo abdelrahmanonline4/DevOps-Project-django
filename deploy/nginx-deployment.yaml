@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: nginx
-          image: 3booda24/devops-project-django_nginx:latest
+          image: gcr.io/$PROJECT_ID/nginx:$SHORT_SHA
           ports:
             - containerPort: 80
           volumeMounts:
