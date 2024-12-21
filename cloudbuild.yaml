@@ -1,24 +1,44 @@
 steps:
   # تحديث بيانات الاعتماد للعنقود
   - name: 'gcr.io/cloud-builders/gcloud'
-    args: ['container', 'clusters', 'get-credentials', 'django', '--zone', 'us-central1-c', '--project', '$PROJECT_ID']
+    args:
+      - container
+      - clusters
+      - get-credentials
+      - django
+      - --zone
+      - us-central1-c
+      - --project
+      - $PROJECT_ID
 
   # بناء ودفع صورة الـ app
   - name: 'gcr.io/cloud-builders/docker'
-    args: ['build', '-t', 'gcr.io/$PROJECT_ID/my-app:$SHORT_SHA', '.']
+    args:
+      - build
+      - -t
+      - gcr.io/$PROJECT_ID/my-app:$SHORT_SHA
+      - .
     dir: '.'
 
   # بناء ودفع صورة nginx
   - name: 'gcr.io/cloud-builders/docker'
-    args: ['build', '-t', 'gcr.io/$PROJECT_ID/nginx:$SHORT_SHA', '.']
+    args:
+      - build
+      - -t
+      - gcr.io/$PROJECT_ID/nginx:$SHORT_SHA
+      - .
     dir: 'nginx'
 
   # دفع الصور
   - name: 'gcr.io/cloud-builders/docker'
-    args: ['push', 'gcr.io/$PROJECT_ID/my-app:$SHORT_SHA']
+    args:
+      - push
+      - gcr.io/$PROJECT_ID/my-app:$SHORT_SHA
 
   - name: 'gcr.io/cloud-builders/docker'
-    args: ['push', 'gcr.io/$PROJECT_ID/nginx:$SHORT_SHA']
+    args:
+      - push
+      - gcr.io/$PROJECT_ID/nginx:$SHORT_SHA
 
   # استبدال الصور في ملفات yaml بالقيم الفعلية
   - name: 'gcr.io/cloud-builders/gcloud'
@@ -26,23 +46,90 @@ steps:
     args:
       - '-c'
       - |
-        sed -i 's|IMAGE_PLACEHOLDER_APP|gcr.io/$PROJECT_ID/my-app:$SHORT_SHA|g' django-deployment.yaml
-        sed -i 's|IMAGE_PLACEHOLDER_NGINX|gcr.io/$PROJECT_ID/nginx:$SHORT_SHA|g' nginx-deployment.yaml
+        sed -i 's|IMAGE_PLACEHOLDER_APP|gcr.io/$PROJECT_ID/my-app:$SHORT_SHA|g' deploy/django-deployment.yaml
+        sed -i 's|IMAGE_PLACEHOLDER_NGINX|gcr.io/$PROJECT_ID/nginx:$SHORT_SHA|g' deploy/nginx-deployment.yaml
 
   # تطبيق التكوينات على العنقود
   - name: 'gcr.io/cloud-builders/kubectl'
     args:
       - apply
+      - --validate=false
       - -f
-      - django-deployment.yaml
+      - .
       - -f
-      - nginx-deployment.yaml
+      - ./deploy
       - -n
       - prod
     env:
-      - 'CLOUDSDK_COMPUTE_ZONE=us-central1-c'
-      - 'CLOUDSDK_CONTAINER_CLUSTER=django'
+      - CLOUDSDK_COMPUTE_ZONE=us-central1-c
+      - CLOUDSDK_CONTAINER_CLUSTER=django
+
+options:
+  logging: CLOUD_LOGGING_ONLYsteps:
+  # تحديث بيانات الاعتماد للعنقود
+  - name: 'gcr.io/cloud-builders/gcloud'
+    args:
+      - container
+      - clusters
+      - get-credentials
+      - django
+      - --zone
+      - us-central1-c
+      - --project
+      - $PROJECT_ID
+
+  # بناء ودفع صورة الـ app
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - build
+      - -t
+      - gcr.io/$PROJECT_ID/my-app:$SHORT_SHA
+      - .
+    dir: '.'
+
+  # بناء ودفع صورة nginx
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - build
+      - -t
+      - gcr.io/$PROJECT_ID/nginx:$SHORT_SHA
+      - .
+    dir: 'nginx'
+
+  # دفع الصور
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - push
+      - gcr.io/$PROJECT_ID/my-app:$SHORT_SHA
+
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - push
+      - gcr.io/$PROJECT_ID/nginx:$SHORT_SHA
+
+  # استبدال الصور في ملفات yaml بالقيم الفعلية
+  - name: 'gcr.io/cloud-builders/gcloud'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        sed -i 's|IMAGE_PLACEHOLDER_APP|gcr.io/$PROJECT_ID/my-app:$SHORT_SHA|g' deploy/django-deployment.yaml
+        sed -i 's|IMAGE_PLACEHOLDER_NGINX|gcr.io/$PROJECT_ID/nginx:$SHORT_SHA|g' deploy/nginx-deployment.yaml
+
+  # تطبيق التكوينات على العنقود
+  - name: 'gcr.io/cloud-builders/kubectl'
+    args:
+      - apply
+      - --validate=false
+      - -f
+      - .
+      - -f
+      - ./deploy
+      - -n
+      - prod
+    env:
+      - CLOUDSDK_COMPUTE_ZONE=us-central1-c
+      - CLOUDSDK_CONTAINER_CLUSTER=django
+
 options:
   logging: CLOUD_LOGGING_ONLY
-
-
