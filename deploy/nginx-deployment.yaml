@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: nginx
-          image: gcr.io/$PROJECT_ID/nginx:$SHORT_SHA
+          image: ${NGINX_IMAGE}  # تحديث لاستخدام المتغير الذي سيتم تحديثه بواسطة Cloud Build
           ports:
             - containerPort: 80
           volumeMounts:

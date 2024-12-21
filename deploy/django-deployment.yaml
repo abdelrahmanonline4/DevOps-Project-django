@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: django
-          image: gcr.io/$PROJECT_ID/my-app:$SHORT_SHA
+          image: ${APP_IMAGE}  # هذا يستبدل بصورة الـ Django
           ports:
             - containerPort: 8000
           volumeMounts:
@@ -23,7 +23,7 @@ spec:
           env:
             - name: STATIC_ROOT
               value: /app/staticfiles
-          command: ["/bin/sh", "-c"]  # هنا يتم تحويل السطر لأمر قائمة
+          command: ["/bin/sh", "-c"]
           args: ["python manage.py collectstatic --noinput && python manage.py migrate && python manage.py runserver 0.0.0.0:8000"]
       volumes:
         - name: static-volume
