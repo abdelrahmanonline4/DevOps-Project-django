@@ -47,7 +47,7 @@ pipeline {
         stage('Deploy Kubernetes Configurations') {
             steps {
                 script {
-                    sh 'kubectl apply -f .
+                    sh 'kubectl apply -f .'
                     sh 'kubectl apply -f deploy/'
                 }
             }
