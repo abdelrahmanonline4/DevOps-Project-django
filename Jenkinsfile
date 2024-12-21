@@ -7,12 +7,6 @@ pipeline {
     }
 
     stages {
-        stage('Clone Repository') {
-            steps {
-                git url: 'https://github.com/abdelrahmanonline4/DevOps-Project-django', credentialsId: 'id_beyanat_el_etemad'
-            }
-        }
-
         stage('Build Django Docker Image') {
             steps {
                 script {
@@ -34,7 +28,6 @@ pipeline {
         stage('Push Docker Images') {
             steps {
                 script {
-                    // استخدام اسم المستخدم وكلمة المرور مباشرة
                     docker.withRegistry('https://registry.hub.docker.com', 'dockerhub-3booda24') {
                         sh "docker login -u 3booda24 -p bedomm180Ab"
                         docker.image(IMAGE_NAME_DJANGO).push()
@@ -47,11 +40,12 @@ pipeline {
         stage('Deploy Kubernetes Configurations') {
             steps {
                 script {
-                    sh 'kubectl apply -f .'
+                    
+                    sh 'kubectl apply -f . '
                     sh 'kubectl apply -f deploy/'
+
                 }
             }
         }
     }
-
 }
