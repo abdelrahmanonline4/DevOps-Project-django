@@ -1,4 +1,8 @@
 steps:
+  # تحديث بيانات الاعتماد للعنقود
+  - name: 'gcr.io/cloud-builders/gcloud'
+    args: ['container', 'clusters', 'get-credentials', 'django', '--zone', 'us-central1-c', '--project', '$PROJECT_ID']
+
   # بناء ودفع صورة الـ app
   - name: 'gcr.io/cloud-builders/docker'
     args: ['build', '-t', 'gcr.io/$PROJECT_ID/my-app:$SHORT_SHA', '.']
@@ -12,7 +16,7 @@ steps:
   # دفع الصور
   - name: 'gcr.io/cloud-builders/docker'
     args: ['push', 'gcr.io/$PROJECT_ID/my-app:$SHORT_SHA']
-  
+
   - name: 'gcr.io/cloud-builders/docker'
     args: ['push', 'gcr.io/$PROJECT_ID/nginx:$SHORT_SHA']
 
@@ -22,21 +26,23 @@ steps:
     args:
       - '-c'
       - |
-        sed -i 's|IMAGE_PLACEHOLDER_APP|gcr.io/$PROJECT_ID/my-app:$SHORT_SHA|g' *.yaml
-        sed -i 's|IMAGE_PLACEHOLDER_NGINX|gcr.io/$PROJECT_ID/nginx:$SHORT_SHA|g' deploy/*.yaml
+        sed -i 's|IMAGE_PLACEHOLDER_APP|gcr.io/$PROJECT_ID/my-app:$SHORT_SHA|g' django-deployment.yaml
+        sed -i 's|IMAGE_PLACEHOLDER_NGINX|gcr.io/$PROJECT_ID/nginx:$SHORT_SHA|g' nginx-deployment.yaml
 
-  - name: 'gcr.io/cloud-builders/gcloud'
-    entrypoint: 'bash'
+  # تطبيق التكوينات على العنقود
+  - name: 'gcr.io/cloud-builders/kubectl'
     args:
-      - '-c'
-      - |
-        kubectl apply -f . --namespace=prod --validate=false 
-        echo "Listing contents of deploy directory:"
-        ls -al ./deploy/ 
-        echo "Applying k8s configurations from deploy directory:"
-        kubectl apply -f ./deploy/ --namespace=prod --validate=false 
+      - apply
+      - -f
+      - django-deployment.yaml
+      - -f
+      - nginx-deployment.yaml
+      - -n
+      - prod
     env:
       - 'CLOUDSDK_COMPUTE_ZONE=us-central1-c'
-      - 'CLOUDSDK_CONTAINER_CLUSTER=django-devops'
+      - 'CLOUDSDK_CONTAINER_CLUSTER=django'
 options:
   logging: CLOUD_LOGGING_ONLY
+
+
