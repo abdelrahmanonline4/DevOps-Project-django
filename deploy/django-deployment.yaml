@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: django-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: django
+  template:
+    metadata:
+      labels:
+        app: django
+    spec:
+      containers:
+        - name: django
+          image: 3booda24/devops-project-django_web:v3
+          ports:
+            - containerPort: 8000
+          volumeMounts:
+            - name: static-volume
+              mountPath: /app/staticfiles
+          env:
+            - name: STATIC_ROOT
+              value: /app/staticfiles
+          command: ["/bin/sh", "-c"]  # هنا يتم تحويل السطر لأمر قائمة
+          args: ["python manage.py collectstatic --noinput && python manage.py migrate && python manage.py runserver 0.0.0.0:8000"]
+      volumes:
+        - name: static-volume
+          persistentVolumeClaim:
+            claimName: static-volume-claim
+
