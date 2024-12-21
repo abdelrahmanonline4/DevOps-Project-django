@@ -22,12 +22,19 @@ steps:
     args:
       - '-c'
       - |
-        sed -i 's|IMAGE_PLACEHOLDER_APP|gcr.io/$PROJECT_ID/my-app:$SHORT_SHA|g' k8s/*.yaml
+        sed -i 's|IMAGE_PLACEHOLDER_APP|gcr.io/$PROJECT_ID/my-app:$SHORT_SHA|g' *.yaml
         sed -i 's|IMAGE_PLACEHOLDER_NGINX|gcr.io/$PROJECT_ID/nginx:$SHORT_SHA|g' deploy/*.yaml
 
-  # تطبيق ملفات k8s
-  - name: 'gcr.io/cloud-builders/kubectl'
-    args: ['apply', '-f', 'k8s/', '-f', 'deploy/']
+  - name: 'gcr.io/cloud-builders/gcloud'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        kubectl apply -f . --namespace=prod --validate=false 
+        echo "Listing contents of deploy directory:"
+        ls -al ./deploy/ 
+        echo "Applying k8s configurations from deploy directory:"
+        kubectl apply -f ./deploy/ --namespace=prod --validate=false 
     env:
       - 'CLOUDSDK_COMPUTE_ZONE=us-central1-c'
       - 'CLOUDSDK_CONTAINER_CLUSTER=django-devops'

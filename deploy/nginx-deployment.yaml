@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: nginx
-          image: gcr.io/excellent-guide-445190-e0/nginx:7c6e40d9
+          image: IMAGE_PLACEHOLDER_NGINX
           ports:
             - containerPort: 80
           volumeMounts:
