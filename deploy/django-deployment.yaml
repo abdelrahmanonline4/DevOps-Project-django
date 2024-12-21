@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: django
-          image: ${APP_IMAGE}  # هذا يستبدل بصورة الـ Django
+          image: gcr.io/$PROJECT_ID/my-app:$SHORT_SHA  # تحديث مباشر باستخدام متغيرات Cloud Build
           ports:
             - containerPort: 8000
           volumeMounts:
