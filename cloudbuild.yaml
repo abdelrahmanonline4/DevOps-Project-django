@@ -1,55 +1,46 @@
 steps:
-  # تحديث بيانات الاعتماد للعنقود
-  - name: 'gcr.io/cloud-builders/gcloud'
-    args:
-      - container
-      - clusters
-      - get-credentials
-      - django
-      - --zone
-      - us-central1-c
-      - --project
-      - $PROJECT_ID
-
-  # بناء ودفع صورة الـ app
+  # تسجيل الدخول إلى Docker Hub باستخدام Secret Manager
   - name: 'gcr.io/cloud-builders/docker'
-    args:
-      - build
-      - -t
-      - gcr.io/$PROJECT_ID/my-app:$SHORT_SHA
-      - .
-    dir: '.'
-
-  # بناء ودفع صورة nginx
-  - name: 'gcr.io/cloud-builders/docker'
-    args:
-      - build
-      - -t
-      - gcr.io/$PROJECT_ID/nginx:$SHORT_SHA
-      - .
-    dir: 'nginx'
-
-  # دفع الصور
-  - name: 'gcr.io/cloud-builders/docker'
-    args:
-      - push
-      - gcr.io/$PROJECT_ID/my-app:$SHORT_SHA
-
-  - name: 'gcr.io/cloud-builders/docker'
-    args:
-      - push
-      - gcr.io/$PROJECT_ID/nginx:$SHORT_SHA
-
-  # استبدال الصور في ملفات yaml بالقيم الفعلية
-  - name: 'gcr.io/cloud-builders/gcloud'
     entrypoint: 'bash'
     args:
       - '-c'
       - |
-        sed -i 's|IMAGE_PLACEHOLDER_APP|gcr.io/$PROJECT_ID/my-app:$SHORT_SHA|g' deploy/django-deployment.yaml
-        sed -i 's|IMAGE_PLACEHOLDER_NGINX|gcr.io/$PROJECT_ID/nginx:$SHORT_SHA|g' deploy/nginx-deployment.yaml
+        docker login -u $DOCKERHUB_USERNAME -p $DOCKERHUB_PASSWORD
+    secretEnv:
+      - DOCKERHUB_USERNAME
+      - DOCKERHUB_PASSWORD
 
-  # تطبيق التكوينات على العنقود
+  # بناء صورة الـ web (Django)
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - build
+      - '-t'
+      - '3booda24/devops-project-django_web:latest'
+      - '.'
+    dir: '.'
+
+  # بناء صورة الـ nginx
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - build
+      - '-t'
+      - '3booda24/devops-project-django_nginx:latest'
+      - '.'
+    dir: 'nginx'
+
+  # دفع صورة الـ web (Django)
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - push
+      - '3booda24/devops-project-django_web:latest'
+
+  # دفع صورة الـ nginx
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - push
+      - '3booda24/devops-project-django_nginx:latest'
+
+  # تطبيق ملفات Kubernetes YAML في الجذر وداخل deploy
   - name: 'gcr.io/cloud-builders/kubectl'
     args:
       - apply
@@ -64,72 +55,13 @@ steps:
       - CLOUDSDK_COMPUTE_ZONE=us-central1-c
       - CLOUDSDK_CONTAINER_CLUSTER=django
 
-options:
-  logging: CLOUD_LOGGING_ONLYsteps:
-  # تحديث بيانات الاعتماد للعنقود
-  - name: 'gcr.io/cloud-builders/gcloud'
-    args:
-      - container
-      - clusters
-      - get-credentials
-      - django
-      - --zone
-      - us-central1-c
-      - --project
-      - $PROJECT_ID
+images:
+  - '3booda24/devops-project-django_web:latest'
+  - '3booda24/devops-project-django_nginx:latest'
 
-  # بناء ودفع صورة الـ app
-  - name: 'gcr.io/cloud-builders/docker'
-    args:
-      - build
-      - -t
-      - gcr.io/$PROJECT_ID/my-app:$SHORT_SHA
-      - .
-    dir: '.'
+secrets:
+  - secretEnv:
+      DOCKERHUB_USERNAME: projects/1024459810410/secrets/DOCKERHUB_USERNAME/versions/latest
+      DOCKERHUB_PASSWORD: projects/1024459810410/secrets/DOCKERHUB_PASSWORD/versions/latest
 
-  # بناء ودفع صورة nginx
-  - name: 'gcr.io/cloud-builders/docker'
-    args:
-      - build
-      - -t
-      - gcr.io/$PROJECT_ID/nginx:$SHORT_SHA
-      - .
-    dir: 'nginx'
 
-  # دفع الصور
-  - name: 'gcr.io/cloud-builders/docker'
-    args:
-      - push
-      - gcr.io/$PROJECT_ID/my-app:$SHORT_SHA
-
-  - name: 'gcr.io/cloud-builders/docker'
-    args:
-      - push
-      - gcr.io/$PROJECT_ID/nginx:$SHORT_SHA
-
-  # استبدال الصور في ملفات yaml بالقيم الفعلية
-  - name: 'gcr.io/cloud-builders/gcloud'
-    entrypoint: 'bash'
-    args:
-      - '-c'
-      - |
-        sed -i 's|IMAGE_PLACEHOLDER_APP|gcr.io/$PROJECT_ID/my-app:$SHORT_SHA|g' deploy/django-deployment.yaml
-        sed -i 's|IMAGE_PLACEHOLDER_NGINX|gcr.io/$PROJECT_ID/nginx:$SHORT_SHA|g' deploy/nginx-deployment.yaml
-
-  # تطبيق التكوينات على العنقود
-  - name: 'gcr.io/cloud-builders/kubectl'
-    args:
-      - apply
-      - --validate=false
-      - -f
-      - .
-      - -f
-      - ./deploy
-      - -n
-      - prod
-    env:
-      - CLOUDSDK_COMPUTE_ZONE=us-central1-c
-      - CLOUDSDK_CONTAINER_CLUSTER=django
-
-options:
-  logging: CLOUD_LOGGING_ONLY
